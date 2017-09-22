@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 
-var reviewSchema = require('../schema/review');
+var ReviewSchema = require('../schema/review');
 
-var reviewModel = mongoose.model('review', reviewSchema);
+var ReviewModel = mongoose.model('review', ReviewSchema);
 
-module.exports = reviewModel;
+module.exports = ReviewModel;

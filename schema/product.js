@@ -1,25 +1,24 @@
 var mongoose = require('mongoose');
-var sequenceGenrator = require('mongoose-sequence-plugin');
+var sequenceGenerator = require('mongoose-sequence-plugin');
 
-var productSchema = mongoose.Schema({
-    productId   :   String,
-    productName :   String,
-    category    :   String,
-    images      :   [{type: String, ref: 'images'}],
-    rating      :   String,
-    reviews     :   [{type: mongoose.Schema.Types.ObjectId, ref: 'review'}],
-    price       :   String,
-    discount    :   String,
-    quantity    :   String,
-    color       :   String,
-    description :   String,
-    highlights  :   [{type: mongoose.Schema.Types.Mixed, ref: 'highlights'}]
+ProductSchema = mongoose.Schema({
+    productId       :   String,
+    productName     :   String,
+    category        :   {type : mongoose.Schema.Types.ObjectId, ref : 'category'},
+    price           :   Number,
+    quantity        :   Number,
+    description     :   String,
+    highlights      :   [{type : String, ref : 'highlights'}],
+    discount        :   Number,
+    colorVariants   :   [{type: String, ref : 'colorVariants'}],             // Variants include colors
+    images          :   [{type : String, ref : 'images'}],
+    ratings         :   Number
 });
 
-productSchema.plugin(sequenceGenrator,{
+ProductSchema.plugin(sequenceGenerator,{
 	field	: 	'productId',
 	startAt	:	'001',
 	prefix	:	'P-'
 });
 
-module.exports = productSchema;
+module.exports = ProductSchema;

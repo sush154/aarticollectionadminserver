@@ -1,162 +1,263 @@
 var express = require('express'),
-    productMiddleware = express(),
-    productRouter = express.Router(),
+    ProductMiddleware = express(),
+    ProductRouter = express.Router(),
     session = require('express-session'),
     cookieParser = require('cookie-parser'),
-    productModel = require('../../model/product');
+    ProductModel = require('../../model/product'),
+    CategoryModel = require('../../model/category');
 
-productRouter.use(cookieParser());
-productRouter.use(session({ secret: 'secretkey', cookie: { httpOnly: false,secure:false,expires: new Date(Date.now() + (1*24*60*60*1000))} })); // session secret
+ProductRouter.use(cookieParser());
+ProductRouter.use(session({ secret: 'secretkey', cookie: { httpOnly: false,secure:false,expires: new Date(Date.now() + (1*24*60*60*1000))} })); // session secret
 
-
-/*productRouter.use(function(req, res, next){
-	/*res.header("Access-Control-Allow-Origin", "*");
+ProductRouter.use(function(req, res, next){
+    res.header("Access-Control-Allow-Origin", "http://localhost:3000");
     res.header("Access-Control-Allow-Credentials", "true");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    if((req.session.cookie._expires > (new Date())) && req.cookies['token']){
-        next();
+    /*if((req.session.cookie._expires > (new Date())) && req.cookies['token']){
+      next();
     } else {
-        res.cookie("token", "", { expires: new Date() });
-        return res.json({data: {status : 401}});
-    }
-});*/
+      res.cookie("token", "", { expires: new Date() });
+      return res.json({data: {status : 401}});
+    }*/next();
+});
 
 
-
-/**
- * The method populates all the products for admin user
- */
-productRouter.get('/getAllProducts', function(req, res){
-
-    productModel.find({}, 'productId productName category quantity' , function(err, product){
-        if(err) return res.json({data:{status : 500}});
-        //return res.json({data: {status: 200, product}});
-        else {
+/*
+*   This method retrieves all products
+*/
+ProductRouter.get('/getAllProducts', function(req, res){
+    ProductModel.find({}).populate('category').select('productId productName category price quantity').exec(function(err, product){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
             return res.json({data: {status: 200, product}});
         }
     });
 });
 
 
-/**
- * The method adds new product
- */
-productRouter.post('/addProduct', function(req, res){
-    var newProduct = new productModel;
+/*
+*   This method get product details for selected product
+*/
+ProductRouter.get('/getProductDetails/:id', function(req, res){
+    var productId = req.params.id;
+
+    ProductModel.findOne({productId : productId}).populate('category').exec(function(err, product){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            if(product !== null){
+                return res.json({data: {status: 200, product}});
+            }else {
+                return res.json({data: {status: 200, product : {}}});
+            }
+
+        }
+    });
+});
+
+
+/*
+*   This method adds new product
+*/
+ProductRouter.post('/addProduct', function(req, res){
+    var newProduct = new ProductModel;
 
     newProduct.productName = req.body.productName;
     newProduct.category = req.body.category;
-    newProduct.rating = req.body.rating;
     newProduct.price = req.body.price;
+    newProduct.quantity = req.body.quantity;
+    newProduct.description = req.body.description;
+    newProduct.discount = 0;
+    newProduct.ratings = 0;
 
-    if(req.body.discount !== undefined && req.body.discount != ''){
-        newProduct.discount = req.body.discount;
+    for(let i=0; i< req.body.highlights.length; i++){
+        newProduct.highlights.push(req.body.highlights[i]);
     }
 
-    newProduct.quantity = req.body.quantity;
-    newProduct.color = req.body.color;
-    newProduct.description = req.body.description;
-
+    for(let i=0; i< req.body.colorVariants.length; i++){
+        newProduct.colorVariants.push(req.body.colorVariants[i]);
+    }
 
     newProduct.save(function(err, product){
-        if(err){console.log(err); return res.json({data: {status : 500}});}
-        else {
-            // Add highlights to the product
-            console.log(req.body.highlights);
-            for(let i=0; i<req.body.highlights.length; i++){
-                console.log(req.body.highlights[i]);
-                productModel.update({_id : product._id}, {'$push' : {'highlights' : req.body.highlights[i]}}, function(err, updatedProduct){
-                    if(err) {return res.json({data: {status : 500}});}
-                    else {
-                        //return res.json({data: {status : 200}});
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data:{status : 200}});
+        }
+    });
+});
+
+
+/*
+*   This method updates product details
+*/
+ProductRouter.post('/updateProduct', function(req, res){
+    var updatedProduct = {};
+
+    if(req.body.productName !== ''){
+        updatedProduct.productName = req.body.productName;
+    }
+
+    if(req.body.category !== ''){
+        updatedProduct.category = req.body.category;
+    }
+
+    if(req.body.price !== ''){
+        updatedProduct.price = req.body.price;
+    }
+
+    if(req.body.quantity !== ''){
+        updatedProduct.quantity = req.body.quantity;
+    }
+
+    if(req.body.description !== ''){
+        updatedProduct.description = req.body.description;
+    }
+
+
+    if(req.body.highlights.length > 0){
+        updatedProduct.highlights = req.body.highlights;
+    }
+
+    if(req.body.colorVariants.length > 0){
+        updatedProduct.colorVariants = req.body.colorVariants;
+    }
+
+    ProductModel.update({_id : req.body._id}, {$set : updatedProduct}, function(err, doc){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data:{status : 200}});
+        }
+    });
+});
+
+
+/*
+*   This method deletes the selected product
+*/
+ProductRouter.post('/deleteProduct', function(req, res){
+    ProductModel.findByIdAndRemove({_id : req.body._id}, function(err, product){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data:{status : 200}});
+        }
+    })
+});
+
+
+/*
+*   This method adds discount for selected product
+*/
+ProductRouter.post('/updateDiscount', function(req, res){
+    ProductModel.update({_id : req.body._id}, {$set : {'discount' : req.body.discount}}, function(err, product){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data:{status : 200}});
+        }
+    });
+});
+
+
+/*
+*   This method updates discount for all products
+*/
+ProductRouter.post('/addDiscountAllProducts', function(req, res){
+    ProductModel.update({}, {$set : {'discount' : req.body.discount}},{multi: true}, function(err, product){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data:{status : 200}});
+        }
+    });
+});
+
+/*
+*   This method updates discount for category
+*/
+ProductRouter.post('/addDiscountForCategory', function(req, res){
+    ProductModel.update({category : req.body.category}, {$set : {'discount' : req.body.discount}},{multi: true}, function(err, product){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data:{status : 200}});
+        }
+    });
+});
+
+/*
+*   This method updates discount for selected Product
+*/
+ProductRouter.post('/addDiscountSelectedProduct', function(req, res){
+    for(let i=0; i < req.body.productIds.length; i++){
+        ProductModel.findOne({_id : req.body.productIds[i]}, function(err, product){
+            if(err){
+                console.log(err);
+                return res.json({data:{status : 500}});
+            }else {
+                ProductModel.update({_id : product._id}, {$set : {'discount' : req.body.discount}}, function(err, updatedProduct){
+                    if(err){
+                        console.log(err);
+                        return res.json({data:{status : 500}});
+                    }else {
 
                     }
                 });
             }
+        });
+    }
 
-            return res.json({data: {status : 200}});
+    return res.json({data:{status : 200}});
+});
+
+
+/*
+*   This method add image urls for the product
+*/
+ProductRouter.post('/addImage', function(req, res){
+    ProductModel.update({_id : req.body._id}, {'$push' : {'images' : req.body.imageUrl}}, function(err, product){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data:{status : 200}});
         }
     });
 });
 
 
-/**
-  * The method populates data for selected Project ID
-  */
-productRouter.get('/getProductDetails/:id', function(req, res){
-    var productID = req.params.id;
-    console.log(productID);
-    productModel.findOne({productId : productID}).populate('reviews').exec(function(err, product){
-        if(err) {console.log(err); return res.json({data: {status : 500}});}
-        else{
-            return res.json({data: {status : 200, product}});
+/*
+*   This method retrieves products based on the filters
+*/
+ProductRouter.post('/applyFilter', function(req, res){
+    var query = {};
+
+    for(let i = 0; i < req.body.filters.length; i++){
+        query[req.body.filters[i].type] = req.body.filters[i].value;
+    }
+
+    ProductModel.find(query).populate('category').select('productId productName category price quantity').exec(function(err, product){
+        if(err){
+           console.log(err);
+           return res.json({data:{status : 500}});
+        }else {
+           return res.json({data: {status: 200, product}});
         }
     });
 });
 
+ProductMiddleware.use('/product', ProductRouter);
 
-/**
- *  This method populates only Product Names.
- */
-productRouter.get('/getProductNames', function(req, res){
-    productModel.find({}).select('productName').exec(function(err, product){
-        if(err) return res.json({data:{status : 500}});
-        return res.json({data: {status: 200, product}});
-    });
-});
+module.exports = ProductMiddleware;
 
-
-/**
- *  This method updates the product details
- */
-productRouter.post('/updateProduct', function(req, res){
-    var productUpdates = {};
-
-    if(req.body.productName !== ''){
-        productUpdates.productName = req.body.productName;
-    }
-
-    if(req.body.category !== ''){
-        productUpdates.category = req.body.category;
-    }
-
-    if(req.body.price !== ''){
-        productUpdates.price = req.body.price;
-    }
-
-    if(req.body.discount !== ''){
-        productUpdates.discount = req.body.discount;
-    }
-
-    if(req.body.quantity !== ''){
-        productUpdates.quantity = req.body.quantity;
-    }
-
-    if(req.body.color !== ''){
-        productUpdates.color = req.body.color;
-    }
-
-    if(req.body.description !== ''){
-        productUpdates.description = req.body.description;
-    }
-
-});
-
-/**
-  * This method adds images urls for product
-  */
-productRouter.post('/addimages', function(req, res){
-    productModel.update({_id : req.body._id}, {'$push' : {'images' : req.body.image}}, function(err, product){
-        if(err) {return res.json({data: {status : 500}});}
-        else {
-            return res.json({data: {status : 200}});
-        }
-    });
-});
-
-
-
-
-productMiddleware.use('/product', productRouter);
-
-module.exports = productMiddleware;

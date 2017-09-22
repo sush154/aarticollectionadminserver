@@ -1,5 +1,5 @@
 {
-  "name": "aarticollectionadminserver",
+  "name": "admincollection",
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
@@ -9,14 +9,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.17.2",
+    "body-parser": "^1.18.1",
     "cookie-parser": "^1.4.3",
     "express": "^4.15.4",
     "express-session": "^1.15.5",
-    "mongoose": "^4.11.10",
+    "mongoose": "^4.11.12",
     "mongoose-sequence-plugin": "^1.0.5",
-    "nodemon": "^1.12.0",
+    "nodemon": "^1.12.1",
     "passport": "^0.4.0",
-    "passport-local": "^1.0.0"
+    "passport-local": "^1.0.0",
+    "server.js": "^1.0.0"
   }
 }

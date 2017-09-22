@@ -1,8 +1,8 @@
 var mongoose = require('mongoose');
 
-
-var categorySchema = mongoose.Schema({
-    type    :   String
+var CategorySchema = mongoose.Schema({
+    categoryName        :   String,
+    parentCategory      :   String          // Dress Material and Saree
 });
 
-module.exports = categorySchema;
+module.exports = CategorySchema;

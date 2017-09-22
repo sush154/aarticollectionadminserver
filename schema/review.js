@@ -1,8 +1,10 @@
 var mongoose = require('mongoose');
 
-var reviewSchema = mongoose.Schema({
-    user    :   {type: mongoose.Schema.Types.ObjectId, ref: 'user'},
-    rating  :   String
+var ReviewSchema = mongoose.Schema({
+    customer        :   {type: mongoose.Schema.Types.ObjectId, ref : 'customer'},
+    reviewDate      :   Date,
+    ratings         :   Number,
+    product         :   {type : mongoose.Schema.Types.ObjectId, ref : 'product'}
 });
 
-module.exports = reviewSchema;
+module.exports = ReviewSchema;

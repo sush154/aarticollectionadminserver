@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 
-var courierSchema = require('../schema/courier');
+var CourierSchema = require('../schema/courier');
 
-var courierModel = mongoose.model('courier', courierSchema);
+var CourierModel = mongoose.model('courier', CourierSchema);
 
-module.exports = courierModel;
+module.exports = CourierModel;

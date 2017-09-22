@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 
-var courierSchema = mongoose.Schema({
+var CourierSchema = mongoose.Schema({
     name    :   String
 });
 
-module.exports = courierSchema;
+module.exports = CourierSchema;
