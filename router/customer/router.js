@@ -35,24 +35,36 @@ CustomerRouter.post('/addCustomer', function(req, res){
     newCustomer.state = req.body.state;
     newCustomer.pincode = req.body.pincode;
     newCustomer.email = req.body.email;
-    newCustomer.password = req.body.password;
     newCustomer.activationFlag = true;
 
-    newCustomer.save(function(err, customer){
+    CustomerModel.findOne({email : req.body.email}, function(err, customer){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
         }else {
-            return res.json({data: {status : 200}});
+            if(!customer){
+                newCustomer.save(function(err, customer){
+                    if(err){
+                        console.log(err);
+                        return res.json({data:{status : 500}});
+                    }else {
+                        return res.json({data: {status : 200}});
+                    }
+                });
+            }else {
+                return res.json({data:{status : 201}});
+            }
         }
-    });
+    })
+
+
 });
 
 /*
 *   This method retrieves All Customers
 */
 CustomerRouter.get('/getAllCustomers', function(req, res, next){
-    CustomerModel.find({}).select('firstName lastName email').exec(function(err, customer){
+    CustomerModel.find({}).select('firstName lastName email city').exec(function(err, customer){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
@@ -71,8 +83,6 @@ CustomerRouter.post('/getCustomerDetails', function(req, res){
             console.log(err);
             return res.json({data:{status : 500}});
         }else {
-            // Deleting password attribute of the customer document
-            delete customer.password;
             return res.json({data: {status : 200, customer}});
         }
     });

@@ -26,7 +26,7 @@ ProductRouter.use(function(req, res, next){
 *   This method retrieves all products
 */
 ProductRouter.get('/getAllProducts', function(req, res){
-    ProductModel.find({}).populate('category').select('productId productName category price quantity').exec(function(err, product){
+    ProductModel.find({}).populate('category').select('productId productName category price quantity images').exec(function(err, product){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
@@ -244,7 +244,7 @@ ProductRouter.post('/applyFilter', function(req, res){
     var query = {};
 
     for(let i = 0; i < req.body.filters.length; i++){
-        query[req.body.filters[i].type] = req.body.filters[i].value;
+        query[req.body.filters[i].type] = new RegExp(req.body.filters[i].value, 'i');
     }
 
     ProductModel.find(query).populate('category').select('productId productName category price quantity').exec(function(err, product){
@@ -253,6 +253,22 @@ ProductRouter.post('/applyFilter', function(req, res){
            return res.json({data:{status : 500}});
         }else {
            return res.json({data: {status: 200, product}});
+        }
+    });
+});
+
+
+/*
+*   This method applies product name filter
+*/
+ProductRouter.get('/productNameFilter/:productName', function(req, res){
+
+    ProductModel.find({'productName' : new RegExp(req.params.productName, 'i')}).populate('category').select('productId productName category price images').exec(function(err, product){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data: {status: 200, product}});
         }
     });
 });

@@ -3,7 +3,7 @@ var express = require('express'),
     LoginRouter = express.Router(),
     session = require('express-session'),
     cookieParser = require('cookie-parser'),
-    CustomerModel = require('../../model/customer');
+    UserModel = require('../../model/user');
 
 
 LoginRouter.use(function(req, res, next){
@@ -22,7 +22,7 @@ LoginRouter.post('', function(req, res, next){
    var userName = req.body.email;
    var password = req.body.password;
 
-   CustomerModel.findOne({email : userName, password : password}, function(err, user) {
+   UserModel.findOne({email : userName, password : password}, function(err, user) {
 
         if(err) {
             console.log(err);
