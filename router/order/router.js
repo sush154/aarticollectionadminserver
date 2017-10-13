@@ -5,7 +5,7 @@ var express = require('express'),
     cookieParser = require('cookie-parser'),
     OrderModel = require('../../model/order'),
     CustomerModel = require('../../model/customer'),
-    ProductModel = require('../../model/product'),
+    OrderedProductModel = require('../../model/orderProduct'),
     CourierModel = require('../../model/courier'),
     DateConverter = require('../../util/dateConverter');
 
@@ -30,6 +30,7 @@ OrderRouter.use(function(req, res, next){
 *   This method adds a new order
 */
 OrderRouter.post('/addOrder', function(req, res){
+
     var newOrder = new OrderModel;
 
     newOrder.orderDate = DateConverter(req.body.orderDate);
@@ -40,26 +41,56 @@ OrderRouter.post('/addOrder', function(req, res){
     newOrder.paymentAmount = req.body.paymentAmount;
     newOrder.paymentStatus = req.body.paymentStatus;
     newOrder.orderType = req.body.orderType;
-
-    for(let i=0; i < req.body.productIds.length; i++){
-        newOrder.products.push(req.body.productIds[i]);
-    }
+    newOrder.deliveryType = req.body.deliveryType;
+    newOrder.transactTrackId = req.body.transactTrackId;
 
     newOrder.save(function(err, order){
         if(err){
             console.log(err);
-            return res.json({data:{status : 500}});
+            //return res.json({data:{status : 500}});
         }else {
-            return res.json({data:{status : 200}});
+            //return res.json({data:{status : 200}});
+
+            for(let i=0; i < req.body.productIds.length; i++){
+
+                var newOrderedProduct = new OrderedProductModel;
+
+                newOrderedProduct.productId = req.body.productIds[i].productId;
+                newOrderedProduct.productName = req.body.productIds[i].productName;
+                newOrderedProduct.price = req.body.productIds[i].price;
+                newOrderedProduct.discount = req.body.productIds[i].discount;
+                newOrderedProduct.quantity = req.body.productIds[i].quantity;
+
+                newOrderedProduct.save(function(err, orderProduct){
+                    if(err){
+                        console.log(err);
+                        //return res.json({data:{status : 500}});
+                    }else {
+                        OrderModel.update({_id : order._id}, {'$push' : {'products' : orderProduct._id}}, function(err, updateOrder){
+                            if(err){
+                                console.log(err);
+                                return res.json({data:{status : 500}});
+                            }else {
+                                //return res.json({data:{status : 200}});
+                            }
+                        })
+                    }
+                })
+
+
+            }
         }
-    })
+    });
+
+    return res.json({data:{status : 200}});
+
 });
 
 /*
 *   This method retrieves all orders
 */
 OrderRouter.get('/getAllOrders', function(req, res){
-    OrderModel.find({}).populate('customer').select('orderId orderDate customer amount orderStatus').exec(function(err, order){
+    OrderModel.find({}).populate('customer').select('orderId orderDate customer amount orderStatus').sort({orderDate: 'desc'}).exec(function(err, order){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
@@ -83,6 +114,78 @@ OrderRouter.post('/getUserOrders', function(req, res){
         }
     });
 });
+
+
+/*
+*   This method populates details of selected order
+*/
+OrderRouter.get('/getOrderDetails/:id', function(req, res){
+    var orderId = req.params.id;
+
+    OrderModel.findOne({orderId : orderId}).populate([{path:'customer'},{path:'products'},{path:'courier'}]).exec(function(err, order){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data: {status: 200, order}});
+        }
+    });
+});
+
+/*
+*   This method populates new orders count only
+*/
+OrderRouter.get('/getNewOrdersCount', function(req, res){
+    OrderModel.count({orderStatus : '0'}, function(err, order){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else{
+            return res.json({data: {status: 200, order}});
+        }
+    });
+});
+
+/*
+*   This method updates order
+*/
+OrderRouter.post('/updateOrder', function(req, res) {
+    let updatedOrder = {};
+
+    if(req.body.orderStatus !== ''){
+        updatedOrder.orderStatus = req.body.orderStatus;
+    }
+
+    if(req.body.paymentStatus !== ''){
+        updatedOrder.paymentStatus = req.body.paymentStatus;
+    }
+
+    if(req.body.paymentAmount !== ''){
+        updatedOrder.paymentAmount = req.body.paymentAmount;
+    }
+
+    if(req.body.courier !== '0' && req.body.courier !== '-1'){
+        updatedOrder.courier = req.body.courier;
+    }
+
+    if(req.body.deliveryTrackId !== ''){
+        updatedOrder.deliveryTrackId = req.body.deliveryTrackId;
+    }
+
+    if(req.body.deliveryDate !== ''){
+        updatedOrder.deliveryDate = DateConverter(req.body.deliveryDate);
+    }
+
+    OrderModel.update({_id : req.body._id}, {$set : updatedOrder}, function(err, order){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data:{status : 200}});
+        }
+    })
+});
+
 
 /*
 *   This method updates payment status of the selected Order
@@ -147,7 +250,7 @@ OrderRouter.post('/cancelOrder', function(req, res){
 
 
 /*
-*   This method updates the selcted order as complete
+*   This method updates the selected order as complete
 */
 OrderRouter.post('/completeOrder', function(req, res){
     OrderModel.update({_id : req.body._id}, {$set : {'orderStatus' : '3'}}, function(err, order){
@@ -188,6 +291,7 @@ OrderRouter.post('/addToShipment', function(req, res){
 });
 
 
+
 /*
 *   This method retrieves total orders count, current month order count and current month income
 */
@@ -226,6 +330,36 @@ OrderRouter.get('/getOrderCountAndIncome', function(req, res){
             }
             data["currentMonthOrder"] = count;
             data["currentMonthIncome"] = amount;
+            return res.json({data:{status : 200, data}});
+        }
+    });
+});
+
+
+/*
+*   This method gets total income till date
+*/
+OrderRouter.get('/getIncomeThisYear', function(req, res){
+
+    let data = {};
+
+    let currentYear = new Date().getFullYear();
+
+    let startDate = new Date(currentYear, 0, 1);
+    let endDate = new Date(currentYear+1, 0, 1);
+
+    OrderModel.find({orderDate : {"$gt" : startDate, "$lte" : endDate}}, function(err, order){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            let amount = 0;
+
+            for(let o of order){
+                amount += o.amount;
+            }
+
+            data["totalIncome"] = amount;
             return res.json({data:{status : 200, data}});
         }
     });

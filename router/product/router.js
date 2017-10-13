@@ -36,6 +36,19 @@ ProductRouter.get('/getAllProducts', function(req, res){
     });
 });
 
+/*
+*   This method get total products count available
+*/
+ProductRouter.get('/getProductsCount', function(req, res){
+    ProductModel.count({}, function(err, product){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data: {status: 200, product}});
+        }
+    });
+});
 
 /*
 *   This method get product details for selected product

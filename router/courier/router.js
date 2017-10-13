@@ -10,7 +10,7 @@ CourierRouter.use(session({ secret: 'secretkey', cookie: { httpOnly: false,secur
 
 
 CourierRouter.use(function(req, res, next){
-	res.header("Access-Control-Allow-Origin", "*");
+	res.header("Access-Control-Allow-Origin", "http://localhost:3000");
     res.header("Access-Control-Allow-Credentials", "true");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     /*if((req.session.cookie._expires > (new Date())) && req.cookies['token']){
@@ -28,7 +28,6 @@ CourierRouter.get('/getAllCouriers', function(req, res){
     CourierModel.find({}, function(err, courier){
         if(err){console.log(err); return res.json({data:{status : 500}});}
         else {
-            console.log(courier);
             return res.json({data: {status: 200, courier}});
         }
     })
@@ -47,7 +46,7 @@ CourierRouter.post('/addCourier', function(req, res) {
         if(err){console.log(err); return res.json({data:{status : 500}});}
 
         else {
-            return res.json({data: {status: 200}});
+            return res.json({data: {status: 200, Id: courier._id}});
         }
     });
 });

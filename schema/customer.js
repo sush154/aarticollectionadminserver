@@ -9,6 +9,7 @@ var CustomerSchema = mongoose.Schema({
     state           :   String,
     pincode         :   String,
     email           :   String,
+    phoneNo         :   String,
     activationFlag  :   Boolean
 });
 
