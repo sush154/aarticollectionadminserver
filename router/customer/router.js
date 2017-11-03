@@ -3,7 +3,8 @@ var express = require('express'),
     CustomerRouter = express.Router(),
     session = require('express-session'),
     cookieParser = require('cookie-parser'),
-    CustomerModel = require('../../model/customer');
+    CustomerModel = require('../../model/customer'),
+    UserModel = require('../../model/user');
 
 
 CustomerRouter.use(cookieParser());
@@ -24,8 +25,13 @@ CustomerRouter.use(function(req, res, next){
 
 /*
 *   This method adds new Customer
+*   This creation depends on the flag "createdFrom" sent in customer object.
+*   If createdFrom -- admin-portal => 1] Customer role - Do not create user in User document. Only create in Customer Portal
+*   2] Admin User role - Create user is both Customer and User Portal
+*   If createdFrom -- customer-portal => Create User is both Customer and User Portal. If user already exists, then override with new data
 */
 CustomerRouter.post('/addCustomer', function(req, res){
+    console.log("add customer");
     var newCustomer = new CustomerModel;
 
     newCustomer.firstName = req.body.firstName;
@@ -36,29 +42,139 @@ CustomerRouter.post('/addCustomer', function(req, res){
     newCustomer.pincode = req.body.pincode;
     newCustomer.email = req.body.email;
     newCustomer.activationFlag = true;
+    newCustomer.role = req.body.role;
 
-    CustomerModel.findOne({email : req.body.email}, function(err, customer){
-        if(err){
-            console.log(err);
-            return res.json({data:{status : 500}});
-        }else {
-            if(!customer){
-                newCustomer.save(function(err, customer){
-                    if(err){
-                        console.log(err);
-                        return res.json({data:{status : 500}});
-                    }else {
-                        return res.json({data: {status : 200}});
-                    }
-                });
+    // Condition - created from admin portal, customer role
+    if(req.body.createdFrom === 'admin-portal' && req.body.role === 'general'){
+        CustomerModel.findOne({email : req.body.email}, function(err, customer){
+            if(err){
+                console.log(err);
+                return res.json({data:{status : 500}});
             }else {
-                return res.json({data:{status : 201}});
+                if(!customer){
+                    newCustomer.save(function(err, customer){
+                        if(err){
+                            console.log(err);
+                            return res.json({data:{status : 500}});
+                        }else {
+                            return res.json({data: {status : 200}});
+                        }
+                    });
+                }else {
+                    return res.json({data:{status : 201}});
+                }
             }
-        }
-    })
+        });
+    }
 
+    // Condition - created from admin portal, admin role
+    if(req.body.createdFrom === 'admin-portal' && req.body.role === 'admin'){
+        CustomerModel.findOne({email : req.body.email}, function(err, customer){
+            if(err){
+                console.log(err);
+                return res.json({data:{status : 500}});
+            }else {
+                if(!customer){
+                    newCustomer.save(function(err, customer){
+                        if(err){
+                            console.log(err);
+                            return res.json({data:{status : 500}});
+                        }else {
+                            // Create user is user schema
+                            var newUser = new UserModel;
+                            newUser.email = req.body.email;
+                            newUser.password = req.body.password;
+                            newUser.customer = customer._id;
+
+                            newUser.save(function(err, user){
+                                if(err){
+                                    console.log(err);
+                                    return res.json({data:{status : 500}});
+                                }else {
+                                    return res.json({data: {status : 200}});
+                                }
+                            })
+                        }
+                    });
+                }else {
+                    return res.json({data:{status : 201}});
+                }
+            }
+        });
+    }
+
+    // Condition - created from customer portal
+    if(req.body.createdFrom === 'customer-portal'){
+        CustomerModel.findOne({email : req.body.email}, function(err, customer){
+            if(err){
+                console.log(err);
+                return res.json({data:{status : 500}});
+            }else {
+                if(!customer){
+                    newCustomer.save(function(err, customer){
+                        if(err){
+                            console.log(err);
+                            return res.json({data:{status : 500}});
+                        }else {
+                            // Create user is user schema
+                            var newUser = new UserModel;
+                            newUser.email = req.body.email;
+                            newUser.password = req.body.password;
+                            newUser.customer = customer._id;
+
+                            newUser.save(function(err, user){
+                                if(err){
+                                    console.log(err);
+                                    return res.json({data:{status : 500}});
+                                }else {
+                                    return res.json({data: {status : 200}});
+                                }
+                            });
+                        }
+                    });
+                }else {
+                    //return res.json({data:{status : 201}});
+
+                    // Update customer details
+                    var updatedCustomer = {}
+
+                    updatedCustomer.firstName = req.body.firstName;
+                    updatedCustomer.lastName = req.body.lastName;
+                    updatedCustomer.address = req.body.address;
+                    updatedCustomer.city = req.body.city;
+                    updatedCustomer.state = req.body.state;
+                    updatedCustomer.pincode = req.body.pincode;
+                    updatedCustomer.email = req.body.email;
+                    updatedCustomer.activationFlag = true;
+                    updatedCustomer.role = req.body.role;
+
+                    CustomerModel.update({_id : customer._id}, {$set : updatedCustomer}, function(e, c){
+                        if(e){
+                            console.log(e);
+                            return res.json({data:{status : 500}});
+                        }else {
+                            var newUser = new UserModel;
+                            newUser.email = req.body.email;
+                            newUser.password = req.body.password;
+                            newUser.customer = c._id;
+
+                            newUser.save(function(err, user){
+                                if(err){
+                                    console.log(err);
+                                    return res.json({data:{status : 500}});
+                                }else {
+                                    return res.json({data: {status : 200}});
+                                }
+                            });
+                        }
+                    })
+                }
+            }
+        });
+    }
 
 });
+
 
 /*
 *   This method retrieves All Customers
@@ -83,6 +199,7 @@ CustomerRouter.post('/getCustomerDetails', function(req, res){
             console.log(err);
             return res.json({data:{status : 500}});
         }else {
+            delete customer.password;
             return res.json({data: {status : 200, customer}});
         }
     });

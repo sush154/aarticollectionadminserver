@@ -10,7 +10,8 @@ var CustomerSchema = mongoose.Schema({
     pincode         :   String,
     email           :   String,
     phoneNo         :   String,
-    activationFlag  :   Boolean
+    activationFlag  :   Boolean,
+    role            :   String
 });
 
 module.exports = CustomerSchema;

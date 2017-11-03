@@ -10,11 +10,12 @@ var CustomerMiddleware = require('./router/customer/router');
 var ProductMiddleware = require('./router/product/router');
 var CategoryMiddleware = require('./router/category/router');
 var OrderMiddleware = require('./router/order/router');
+var AuthMiddleware = require('./router/auth/router');
 
 app.use(bodyParser.json());
 
 app.use('/', [LoginMiddleware, CourierMiddleware, ReviewMiddleware, CustomerMiddleware, ProductMiddleware,
-                CategoryMiddleware, OrderMiddleware]);
+                CategoryMiddleware, OrderMiddleware, AuthMiddleware]);
 
 module.exports = app;
 
