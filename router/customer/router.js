@@ -4,23 +4,24 @@ var express = require('express'),
     session = require('express-session'),
     cookieParser = require('cookie-parser'),
     CustomerModel = require('../../model/customer'),
-    UserModel = require('../../model/user');
+    UserModel = require('../../model/user'),
+    config = require('../../config');
 
 
 CustomerRouter.use(cookieParser());
-CustomerRouter.use(session({ secret: 'secretkey', cookie: { httpOnly: false,secure:false,expires: new Date(Date.now() + (1*24*60*60*1000))} })); // session secret
+CustomerRouter.use(session({ secret: 'secretkey', cookie: { httpOnly: false,secure:false,expires: new Date(Date.now() + (1*24*60*60*1000))}, resave: true, saveUninitialized: true  })); // session secret
 
 
 CustomerRouter.use(function(req, res, next){
-    res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+    res.header("Access-Control-Allow-Origin", config.client.connectionUrl);
     res.header("Access-Control-Allow-Credentials", "true");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    /*if((req.session.cookie._expires > (new Date())) && req.cookies['token']){
+    if((req.session.cookie._expires > (new Date())) && req.cookies['token']){
       next();
     } else {
       res.cookie("token", "", { expires: new Date() });
       return res.json({data: {status : 401}});
-    }*/next();
+    }
 });
 
 /*
@@ -31,7 +32,7 @@ CustomerRouter.use(function(req, res, next){
 *   If createdFrom -- customer-portal => Create User is both Customer and User Portal. If user already exists, then override with new data
 */
 CustomerRouter.post('/addCustomer', function(req, res){
-    console.log("add customer");
+
     var newCustomer = new CustomerModel;
 
     newCustomer.firstName = req.body.firstName;
@@ -44,8 +45,21 @@ CustomerRouter.post('/addCustomer', function(req, res){
     newCustomer.activationFlag = true;
     newCustomer.role = req.body.role;
 
+    if(req.body.phoneNo !== ''){
+        newCustomer.phoneNo = req.body.phoneNo;
+    }
+
+    newCustomer.save(function(err, customer){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data:{status : 200}});
+        }
+    })
+
     // Condition - created from admin portal, customer role
-    if(req.body.createdFrom === 'admin-portal' && req.body.role === 'general'){
+    /*if(req.body.createdFrom === 'admin-portal' && req.body.role === 'general'){
         CustomerModel.findOne({email : req.body.email}, function(err, customer){
             if(err){
                 console.log(err);
@@ -148,6 +162,10 @@ CustomerRouter.post('/addCustomer', function(req, res){
                     updatedCustomer.activationFlag = true;
                     updatedCustomer.role = req.body.role;
 
+                    if(req.body.phoneNo !== ''){
+                        updatedCustomer.phoneNo = req.body.phoneNo;
+                    }
+
                     CustomerModel.update({_id : customer._id}, {$set : updatedCustomer}, function(e, c){
                         if(e){
                             console.log(e);
@@ -171,16 +189,19 @@ CustomerRouter.post('/addCustomer', function(req, res){
                 }
             }
         });
-    }
+    }*/
 
 });
 
+/*
+*   This method
+*/
 
 /*
 *   This method retrieves All Customers
 */
 CustomerRouter.get('/getAllCustomers', function(req, res, next){
-    CustomerModel.find({}).select('firstName lastName email city').exec(function(err, customer){
+    CustomerModel.find({}).select('firstName lastName email city state').exec(function(err, customer){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
@@ -193,8 +214,11 @@ CustomerRouter.get('/getAllCustomers', function(req, res, next){
 /*
 *   This method retrieves Customer Details
 */
-CustomerRouter.post('/getCustomerDetails', function(req, res){
-    CustomerModel.findOne({_id : req.body.customerId}, function(err, customer){
+CustomerRouter.get('/getCustomerDetails/:id', function(req, res){
+
+    var customerId = req.params.id;
+
+    CustomerModel.findOne({_id : customerId}, function(err, customer){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});

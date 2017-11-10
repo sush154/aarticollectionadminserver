@@ -4,22 +4,23 @@ var express = require('express'),
     session = require('express-session'),
     cookieParser = require('cookie-parser'),
     ReviewModel = require('../../model/review'),
-    DateConverter = require('../../util/dateConverter');
+    DateConverter = require('../../util/dateConverter'),
+    config = require('../../config');
 
 
 ReviewRouter.use(cookieParser());
-ReviewRouter.use(session({ secret: 'secretkey', cookie: { httpOnly: false,secure:false,expires: new Date(Date.now() + (1*24*60*60*1000))} })); // session secret
+ReviewRouter.use(session({ secret: 'secretkey', cookie: { httpOnly: false,secure:false,expires: new Date(Date.now() + (1*24*60*60*1000))}, resave: true, saveUninitialized: true  })); // session secret
 
 ReviewRouter.use(function(req, res, next){
-    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Origin", config.client.connectionUrl);
     res.header("Access-Control-Allow-Credentials", "true");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    /*if((req.session.cookie._expires > (new Date())) && req.cookies['token']){
+    if((req.session.cookie._expires > (new Date())) && req.cookies['token']){
         next();
     } else {
         res.cookie("token", "", { expires: new Date() });
         return res.json({data: {status : 401}});
-    }*/next();
+    }
 });
 
 /*
