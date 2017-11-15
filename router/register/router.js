@@ -16,8 +16,7 @@ RegisterRouter.use(function(req, res, next){
 RegisterRouter.post('', function(req, res){
     var newCustomer = new CustomerModel();
 
-    newCustomer.firstName = req.body.firstName;
-    newCustomer.lastName = req.body.lastName;
+    newCustomer.customerName = req.body.customerName;
     newCustomer.address = req.body.address;
     newCustomer.city = req.body.city;
     newCustomer.state = req.body.state;
@@ -79,8 +78,7 @@ RegisterRouter.post('', function(req, res){
                 }else {
                     let updatedCustomer = {};
 
-                    updatedCustomer.firstName = req.body.firstName;
-                    updatedCustomer.lastName = req.body.lastName;
+                    updatedCustomer.customerName = req.body.customerName;
                     updatedCustomer.address = req.body.address;
                     updatedCustomer.city = req.body.city;
                     updatedCustomer.state = req.body.state;

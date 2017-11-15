@@ -35,8 +35,7 @@ CustomerRouter.post('/addCustomer', function(req, res){
 
     var newCustomer = new CustomerModel;
 
-    newCustomer.firstName = req.body.firstName;
-    newCustomer.lastName = req.body.lastName;
+    newCustomer.customerName = req.body.customerName;
     newCustomer.address = req.body.address;
     newCustomer.city = req.body.city;
     newCustomer.state = req.body.state;
@@ -49,14 +48,27 @@ CustomerRouter.post('/addCustomer', function(req, res){
         newCustomer.phoneNo = req.body.phoneNo;
     }
 
-    newCustomer.save(function(err, customer){
-        if(err){
-            console.log(err);
+    CustomerModel.findOne({email : req.body.email}, function(e, cust){
+        if(e){
+            console.log(e);
             return res.json({data:{status : 500}});
         }else {
-            return res.json({data:{status : 200}});
+            if(cust){
+                return res.json({data:{status : 201}});
+            }else {
+                newCustomer.save(function(err, customer){
+                    if(err){
+                        console.log(err);
+                        return res.json({data:{status : 500}});
+                    }else {
+                        return res.json({data:{status : 200}});
+                    }
+                });
+            }
         }
-    })
+    });
+
+
 
     // Condition - created from admin portal, customer role
     /*if(req.body.createdFrom === 'admin-portal' && req.body.role === 'general'){
@@ -201,7 +213,21 @@ CustomerRouter.post('/addCustomer', function(req, res){
 *   This method retrieves All Customers
 */
 CustomerRouter.get('/getAllCustomers', function(req, res, next){
-    CustomerModel.find({}).select('firstName lastName email city state').exec(function(err, customer){
+    CustomerModel.find({}).select('customerName email city state customerId').exec(function(err, customer){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data: {status : 200, customer}});
+        }
+    });
+});
+
+/*
+*   This method retrieves only customers - role - customers
+*/
+CustomerRouter.get('/getOnlyCustomers', function(req, res){
+    CustomerModel.find({role : 'customer'}, function(err, customer){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
@@ -218,7 +244,7 @@ CustomerRouter.get('/getCustomerDetails/:id', function(req, res){
 
     var customerId = req.params.id;
 
-    CustomerModel.findOne({_id : customerId}, function(err, customer){
+    CustomerModel.findOne({customerId : customerId}, function(err, customer){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
@@ -259,47 +285,82 @@ CustomerRouter.get('/searchCustomer/:id', function(req, res){
 CustomerRouter.post('/updateCustomer', function(req, res, next){
     var updatedCustomer = {};
 
-    if(req.body.email !== ''){
-        CustomerModel.findOne({email : req.body.email}, function(err, customer){
-            if(err){
-                console.log(err);
-                return res.json({data:{status : 500}});
-            }else {
-                if(customer){
-                    // Customer found
-                    return res.json({data:{status : 201}});
-                }else {
-                    // Customer not found
+    let customerOldEmail = '';
 
-                }
-            }
-        });
-    }
-    if(req.body.firstName !== ''){
-        updatedCustomer.firstName = req.body.firstName;
-    }
+    CustomerModel.findOne({_id : req.body._id}, function(err, c){
+       if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+       }else if(c){
+            customerOldEmail = c.email;
+       }
+    });
 
-    if(req.body.lastName !== ''){
-        updatedCustomer.lastName = req.body.lastName;
+    if(req.body.customerName !== ''){
+        updatedCustomer.customerName = req.body.customerName;
     }
 
     if(req.body.address !== ''){
         updatedCustomer.address = req.body.address;
     }
 
+    if(req.body.city !== ''){
+        updatedCustomer.city = req.body.city;
+    }
+
+    if(req.body.state !== ''){
+        updatedCustomer.state = req.body.state;
+    }
+
+    if(req.body.pincode !== ''){
+        updatedCustomer.pincode = req.body.pincode;
+    }
+
     if(req.body.email != ''){
         updatedCustomer.email = req.body.email;
     }
 
-    CustomerModel.update({_id : req.body._id}, {$set : updatedCustomer}, function(err, customer){
-        if(err){
-            console.log(err);
+    if(req.body.phoneNo !== ''){
+        updatedCustomer.phoneNo = req.body.phoneNo;
+    }
+
+    CustomerModel.findOne({email : req.body.email}, function(e3, c1){
+        if(e3){
+            console.log(e3);
             return res.json({data:{status : 500}});
-        }else {
-            return res.json({data:{status : 200}});
+        }else if(c1 && customerOldEmail !== req.body.email){   // Customer with new email address is found. Please use new email address
+            return res.json({data:{status : 201}});
+
+        }else {     // Customer with new email address is not found. Update the customer
+            CustomerModel.update({_id : req.body._id}, {$set : updatedCustomer}, function(e, cust){
+                if(e){
+                    console.log(e);
+                    return res.json({data:{status : 500}});
+                }else {
+                    if(customerOldEmail === req.body.email){ // Previous email is same as new email. No need to update user model
+                        return res.json({data:{status : 200}});
+
+                    }else { // Previous emails is different than new email. Update user model
+                        UserModel.findOne({email : customerOldEmail}, function(e1, user){
+                           if(e1){
+                                console.log(e1);
+                                return res.json({data:{status : 500}});
+                           }else if(user){  // user found with previous email address
+                                UserModel.update({_id : user._id}, {$set : {'email' : req.body.email}}, function(e2, u){
+                                    if(e2) {
+                                        console.log(e2);
+                                        return res.json({data:{status : 500}});
+                                    }else {
+                                        return res.json({data:{status : 200}});
+                                    }
+                                });
+                           }
+                        });
+                    }
+                }
+            });
         }
     });
-
 
 });
 
@@ -359,13 +420,10 @@ CustomerRouter.post('/updateLoggedInUser', function(req, res, next){
         });
     }
 
-    if(req.body.firstName !== ''){
-        updatedCustomer.firstName = req.body.firstName;
+    if(req.body.customerName !== ''){
+        updatedCustomer.customerName = req.body.customerName;
     }
 
-    if(req.body.lastName !== ''){
-        updatedCustomer.lastName = req.body.lastName;
-    }
 
     if(req.body.address !== ''){
         updatedCustomer.address = req.body.address;
@@ -400,6 +458,57 @@ CustomerRouter.post('/deleteCustomer', function(req, res){
         }
     });
 });
+
+/*
+*   This method searches customer based on filter
+*/
+CustomerRouter.get('/customerNameFilter/:filterType/:filterValue', function(req, res){
+
+    if(req.params.filterType === 'customerName'){
+
+        CustomerModel.find({'customerName' : new RegExp(req.params.filterValue, 'i')}, function(err, customer){
+            if(err){
+                console.log(err);
+                return res.json({data:{status : 500}});
+            }else {
+                console.log(customer.length);
+                return res.json({data: {status : 200, customer}});
+            }
+        });
+    }else if(req.params.filterType === 'city'){
+
+        CustomerModel.find({'city' : new RegExp(req.params.filterValue, 'i')}, function(err, customer){
+            if(err){
+                console.log(err);
+                return res.json({data:{status : 500}});
+            }else {
+                return res.json({data: {status : 200, customer}});
+            }
+        })
+    }
+
+
+});
+
+
+/*
+*   This method applies filter based on filter type and filter value
+*/
+CustomerRouter.post('/applyFilter', function(req, res){
+    var query = {};
+
+    query[req.body.filterType] = req.body.filterValue;
+
+    CustomerModel.find(query).exec(function(err, customer){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data: {status : 200, customer}});
+        }
+    });
+});
+
 
 
 

@@ -3,8 +3,7 @@ var sequenceGenerator = require('mongoose-sequence-plugin');
 
 var CustomerSchema = mongoose.Schema({
     customerId      :   String,
-    firstName       :   String,
-    lastName        :   String,
+    customerName    :   String,
     address         :   String,
     city            :   String,
     state           :   String,
@@ -12,7 +11,7 @@ var CustomerSchema = mongoose.Schema({
     email           :   String,
     phoneNo         :   String,
     activationFlag  :   Boolean,
-    role            :   String
+    role            :   String      // admin, customer, super
 });
 
 CustomerSchema.plugin(sequenceGenerator, {
