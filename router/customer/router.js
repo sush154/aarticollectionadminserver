@@ -13,7 +13,12 @@ CustomerRouter.use(session({ secret: 'secretkey', cookie: { httpOnly: false,secu
 
 
 CustomerRouter.use(function(req, res, next){
-    res.header("Access-Control-Allow-Origin", config.client.connectionUrl);
+    var origin = req.headers.origin;
+    if(config.client.connectionUrl.indexOf(origin) > -1){
+         res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+
+    //res.header("Access-Control-Allow-Origin", config.client.connectionUrl);
     res.header("Access-Control-Allow-Credentials", "true");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     if((req.session.cookie._expires > (new Date())) && req.cookies['token']){
