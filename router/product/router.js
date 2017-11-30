@@ -5,7 +5,10 @@ var express = require('express'),
     cookieParser = require('cookie-parser'),
     ProductModel = require('../../model/product'),
     CategoryModel = require('../../model/category'),
-    config = require('../../config');
+    config = require('../../config')
+    ImageModel = require('../../model/image'),
+    multer = require('multer')
+    fs = require('fs');
 
 ProductRouter.use(cookieParser());
 ProductRouter.use(session({ secret: 'secretkey', cookie: { httpOnly: false,secure:false,expires: new Date(Date.now() + (1*24*60*60*1000))}, resave: false, saveUninitialized: true  })); // session secret
@@ -23,6 +26,20 @@ ProductRouter.use(function(req, res, next){
 });
 
 
+var storage = multer.diskStorage({ //multers disk storage settings
+    destination: function (req, file, cb) {
+        cb(null, './uploads/');
+    },
+    filename: function (req, file, cb) {
+        var datetimestamp = Date.now();
+        cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1]);
+    }
+});
+
+var upload = multer({ //multer settings
+    storage: storage
+}).single('file');
+
 /*
 *   This method retrieves all products
 */
@@ -33,6 +50,7 @@ ProductRouter.get('/getAllProducts', function(req, res){
             return res.json({data:{status : 500}});
         }else {
             return res.json({data: {status: 200, product}});
+
         }
     });
 });
@@ -87,20 +105,20 @@ ProductRouter.post('/addProduct', function(req, res){
     newProduct.discount = 0;
     newProduct.ratings = 0;
 
-    for(let i=0; i< req.body.highlights.length; i++){
+    /*for(let i=0; i< req.body.highlights.length; i++){
         newProduct.highlights.push(req.body.highlights[i]);
     }
 
     for(let i=0; i< req.body.colorVariants.length; i++){
         newProduct.colorVariants.push(req.body.colorVariants[i]);
-    }
+    }*/
 
     newProduct.save(function(err, product){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
         }else {
-            return res.json({data:{status : 200}});
+            return res.json({data: {status: 200, product}});
         }
     });
 });
@@ -239,17 +257,69 @@ ProductRouter.post('/addDiscountSelectedProduct', function(req, res){
 /*
 *   This method add image urls for the product
 */
-ProductRouter.post('/addImage', function(req, res){
-    ProductModel.update({_id : req.body._id}, {'$push' : {'images' : req.body.imageUrl}}, function(err, product){
+ProductRouter.post('/addImage/:productId', function(req, res){
+    /*ProductModel.update({_idg : req.body._id}, {'$push' : {'images' : req.body.imaeUrl}}, function(err, product){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
         }else {
             return res.json({data:{status : 200}});
         }
+    });*/
+    //console.log(req.params.productId);
+    upload(req,res,function(err){
+        //console.log(req.file);
+        if(err){
+             return res.json({error_code:1,err_desc:err});
+
+        }else {
+            var newImage = new ImageModel;
+
+            newImage.img.data = fs.readFileSync(req.file.path);
+            newImage.img.contentType = 'base64';
+            newImage.projectId = req.params.productId;
+
+            newImage.save(function(e, image){
+                if(e){
+                    console.log(e);
+                    return res.json({data:{status : 500}});
+                }else {
+                    fs.unlinkSync(req.file.path);
+                    return res.json({data:{status : 200}});
+
+                    /*ProductModel.update({_id : req.params.productId}, {'$push' : {'images' : image._id}}, function(err, product){
+                        if(err){
+                            console.log(err);
+                            return res.json({data:{status : 500}});
+                        }else {
+                            return res.json({data: {status: 200, product : req.params.productId}});
+                            //return res.json({error_code:0,err_desc:null});
+                        }
+                    });*/
+                }
+            });
+        }
+
     });
 });
 
+/*
+*   This method retrieves images list for selected product id
+*/
+ProductRouter.get('/getImagesList/:productId', function(req, res){
+//projectId : req.params.productId
+    ImageModel.find({projectId : req.params.productId}, function(err, image){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+
+            //res.set('Content-Type', 'image/*');
+            res.send(image);
+            //return res.json({data: {status: 200, product}});
+        }
+    })
+});
 
 /*
 *   This method retrieves products based on the filters
@@ -283,6 +353,7 @@ ProductRouter.get('/productNameFilter/:productName', function(req, res){
             return res.json({data:{status : 500}});
         }else {
             return res.json({data: {status: 200, product}});
+
         }
     });
 });

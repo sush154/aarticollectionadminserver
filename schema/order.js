@@ -9,7 +9,7 @@ var OrderSchema = mongoose.Schema({
     paymentType     :   String,         // Cash(0), Online(1), Cheque(2)
     deliveryDate    :   Date,
     orderStatus     :   String,         // New(0), Pending(1), Shipped(2), Complete(3), Cancelled(4), Pick Up(5)
-    amount          :   Number,
+    amount          :   Number,         // This is final ampunt of the ordr. It would be calculated based on total price, GST and discount
     paymentAmount   :   Number,         // This amount will be amount paid by customer
     products        :   [{type : mongoose.Schema.Types.ObjectId, ref : 'orderProduct'}],
     courier         :   {type : mongoose.Schema.Types.ObjectId , ref : 'courier'},

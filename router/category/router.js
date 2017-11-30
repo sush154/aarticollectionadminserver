@@ -57,7 +57,7 @@ CategoryRouter.get('/getAllCategories', function(req, res){
 
 
 /*
-*   This method retrieves categories based on paretn categiry selected
+*   This method retrieves categories based on parent category selected
 */
 CategoryRouter.get('/getFilteredCategory/:category', function(req, res){
     CategoryModel.find({parentCategory : req.params.category}, function(err, category){
@@ -110,6 +110,17 @@ CategoryRouter.post('/deleteCategory', function(req, res){
         }
     });
 });
+
+CategoryRouter.get('/applyFilter/:filterValue', function(req, res){
+    CategoryModel.find({'categoryName' : new RegExp(req.params.filterValue, 'i')}, function(err, category){
+        if(err) {
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data: {status: 200, category}});
+        }
+    });
+})
 
 CategoryMiddleware.use('/category', CategoryRouter);
 
