@@ -11,7 +11,7 @@ ProductSchema = mongoose.Schema({
     highlights      :   [{type : String, ref : 'highlights'}],
     discount        :   Number,
     colorVariants   :   [{type: String, ref : 'colorVariants'}],             // Variants include colors
-    images          :   [{type : mongoose.Schema.Types.ObjectId, ref : 'image'}],
+    //images          :   [{type : mongoose.Schema.Types.ObjectId, ref : 'image'}],
     ratings         :   Number
 });
 

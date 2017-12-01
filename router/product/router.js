@@ -156,12 +156,66 @@ ProductRouter.post('/updateProduct', function(req, res){
     }
 
 
-    if(req.body.highlights.length > 0){
-        updatedProduct.highlights = req.body.highlights;
+    if(req.body.highlights !== ''){
+        let highlights = req.body.highlights.split(',');
+        let hlArray = [];
+        for(let hl of highlights){
+            hlArray.push(hl);
+        }
+        updatedProduct.highlights = hlArray;
     }
 
     if(req.body.colorVariants.length > 0){
-        updatedProduct.colorVariants = req.body.colorVariants;
+        let clVariants = req.body.colorVariants.split(',');
+        let cvArray = [];
+        for(let cv of clVariants){
+            cvArray.push(cv);
+        }
+        updatedProduct.colorVariants = cvArray;
+    }
+
+    ProductModel.update({_id : req.body._id}, {$set : updatedProduct}, function(err, doc){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data:{status : 200}});
+        }
+    });
+});
+
+/*
+*   This method adds meta information of the product
+*/
+ProductRouter.post('/addMetaInfo', function(req, res){
+
+    let updatedProduct = {};
+
+    if(req.body.description !== ''){
+        updatedProduct.description = req.body.description;
+    }
+
+    if(req.body.discount){
+        updatedProduct.discount = req.body.discount;
+    }
+
+
+    if(req.body.highlights !== ''){
+        let highlights = req.body.highlights.split(',');
+        let hlArray = [];
+        for(let hl of highlights){
+            hlArray.push(hl);
+        }
+        updatedProduct.highlights = hlArray;
+    }
+
+    if(req.body.colorVariants.length > 0){
+        let clVariants = req.body.colorVariants.split(',');
+        let cvArray = [];
+        for(let cv of clVariants){
+            cvArray.push(cv);
+        }
+        updatedProduct.colorVariants = cvArray;
     }
 
     ProductModel.update({_id : req.body._id}, {$set : updatedProduct}, function(err, doc){

@@ -514,7 +514,19 @@ CustomerRouter.post('/applyFilter', function(req, res){
     });
 });
 
-
+/*
+*   This method retrieves total count of customers
+*/
+CustomerRouter.get('/getCustomersCount', function(req, res){
+    CustomerModel.count({}, function(err, customer){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data: {status : 200, customer}});
+        }
+    });
+});
 
 
 CustomerMiddleware.use('/customer', CustomerRouter);
