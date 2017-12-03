@@ -5,7 +5,8 @@ var express = require('express'),
     cookieParser = require('cookie-parser'),
     ReviewModel = require('../../model/review'),
     DateConverter = require('../../util/dateConverter'),
-    config = require('../../config');
+    config = require('../../config')
+    CommentModel = require('../../model/comment');
 
 
 ReviewRouter.use(cookieParser());
@@ -32,7 +33,7 @@ ReviewRouter.use(function(req, res, next){
 *   This method retrieves all the reviews
 */
 ReviewRouter.get('/getAllReviews', function(req, res){
-    ReviewModel.find({}).populate([{path : 'customer'}, {path : 'product'}]).exec(function(err, review){
+    ReviewModel.find({}).populate([{path : 'customer'}, {path : 'product'}, {path : 'comments'}]).exec(function(err, review){
         if(err) {console.log(err); return res.json({data:{status : 500}})}
         else {
             return res.json({data: {status: 200, review}});
@@ -48,7 +49,7 @@ ReviewRouter.get('/getAllReviews', function(req, res){
 ReviewRouter.post('/getUserReviews', function(req, res){
     var userId = req.body.userId;
 
-    ReviewModel.find({customer : userId}).populate([{path : 'customer'}, {path : 'product'}]).exec(function(err, review){
+    ReviewModel.find({customer : userId}).populate([{path : 'customer'}, {path : 'product'}, {path : 'comments'}]).exec(function(err, review){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
@@ -65,7 +66,7 @@ ReviewRouter.post('/getUserReviews', function(req, res){
 ReviewRouter.post('/getProductReviews', function(req, res) {
     var productId = req.body.productId;
 
-    ReviewModel.find({product : productId}).populate([{path : 'customer'}, {path : 'product'}]).exec(function(err, review){
+    ReviewModel.find({product : productId}).populate([{path : 'customer'}, {path : 'product'}, {path : 'comments'}]).exec(function(err, review){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
@@ -85,14 +86,34 @@ ReviewRouter.post('/addReview', function(req, res){
     newReview.customer = req.body.userId;
     newReview.reviewDate = DateConverter(req.body.reviewDate);
     newReview.ratings = req.body.ratings;
-    newReview.product = req.body.product;
+    newReview.product = req.body.productId;
+
+    
 
     newReview.save(function(err, review){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
         }else {
-            return res.json({data: {status: 200}});
+            var newComment = new CommentModel;
+            newComment.comment = req.body.comment;
+        
+            newComment.save(function(e1, comment){
+                if(e1){
+                    console.log(e1);
+                    return res.json({data:{status : 500}});
+                }else {
+                    ReviewModel.update({_id : review._id}, {'$push' : {'comments' : comment._id}}, function(e, uReview){
+                        if(e){
+                            console.log(e);
+                            return res.json({data:{status : 500}});
+                        }else {
+                            return res.json({data: {status: 200}});
+                        }
+                    });
+                }
+            })
+            
         }
     })
 });

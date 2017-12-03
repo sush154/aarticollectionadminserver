@@ -143,11 +143,11 @@ ProductRouter.post('/updateProduct', function(req, res){
         updatedProduct.category = req.body.category;
     }
 
-    if(req.body.price !== ''){
+    if(req.body.price){
         updatedProduct.price = req.body.price;
     }
 
-    if(req.body.quantity !== ''){
+    if(req.body.quantity){
         updatedProduct.quantity = req.body.quantity;
     }
 
@@ -156,22 +156,12 @@ ProductRouter.post('/updateProduct', function(req, res){
     }
 
 
-    if(req.body.highlights !== ''){
-        let highlights = req.body.highlights.split(',');
-        let hlArray = [];
-        for(let hl of highlights){
-            hlArray.push(hl);
-        }
-        updatedProduct.highlights = hlArray;
+    if(req.body.highlights && req.body.highlights.length > 0){
+        updatedProduct.highlights = req.body.highlights;
     }
 
-    if(req.body.colorVariants.length > 0){
-        let clVariants = req.body.colorVariants.split(',');
-        let cvArray = [];
-        for(let cv of clVariants){
-            cvArray.push(cv);
-        }
-        updatedProduct.colorVariants = cvArray;
+    if(req.body.colorVariants && req.body.colorVariants.length > 0){
+        updatedProduct.colorVariants = req.body.colorVariants;
     }
 
     ProductModel.update({_id : req.body._id}, {$set : updatedProduct}, function(err, doc){
@@ -200,22 +190,12 @@ ProductRouter.post('/addMetaInfo', function(req, res){
     }
 
 
-    if(req.body.highlights !== ''){
-        let highlights = req.body.highlights.split(',');
-        let hlArray = [];
-        for(let hl of highlights){
-            hlArray.push(hl);
-        }
-        updatedProduct.highlights = hlArray;
+    if(req.body.highlights && req.body.highlights.length > 0){
+        updatedProduct.highlights = req.body.highlights;
     }
 
-    if(req.body.colorVariants.length > 0){
-        let clVariants = req.body.colorVariants.split(',');
-        let cvArray = [];
-        for(let cv of clVariants){
-            cvArray.push(cv);
-        }
-        updatedProduct.colorVariants = cvArray;
+    if(req.body.colorVariants && req.body.colorVariants.length > 0){
+        updatedProduct.colorVariants = req.body.colorVariants;
     }
 
     ProductModel.update({_id : req.body._id}, {$set : updatedProduct}, function(err, doc){
