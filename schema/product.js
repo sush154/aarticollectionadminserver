@@ -11,7 +11,7 @@ ProductSchema = mongoose.Schema({
     highlights      :   [{type : String, ref : 'highlights'}],
     discount        :   Number,
     colorVariants   :   [{type: String, ref : 'colorVariants'}],             // Variants include colors
-    
+    additionDate    :   Date,        // This is date on which product has been added
     ratings         :   Number
 });
 

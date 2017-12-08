@@ -8,7 +8,8 @@ var express = require('express'),
     OrderedProductModel = require('../../model/orderProduct'),
     CourierModel = require('../../model/courier'),
     DateConverter = require('../../util/dateConverter'),
-    config = require('../../config');
+    config = require('../../config'),
+    ProductModel = require('../../model/product');
 
 OrderRouter.use(cookieParser());
 OrderRouter.use(session({ secret: 'secretkey', cookie: { httpOnly: false,secure:false,expires: new Date(Date.now() + (1*24*60*60*1000))}, resave: false, saveUninitialized: true  })); // session secret
@@ -79,6 +80,17 @@ OrderRouter.post('/addOrder', function(req, res){
                                 return res.json({data:{status : 500}});
                             }else {
                                 //return res.json({data:{status : 200}});
+                                //TODO: decrease product quantity from product document.
+                                let orderQuantity = '-' + req.body.productIds[i].quantity;
+
+                                ProductModel.update({_id : req.body.productIds[i]._id}, {'$inc' : {'quantity' : orderQuantity}}, function(ee, updatedProduct){
+                                    if(ee){
+                                        console.log(ee);
+                                        return res.json({data:{status : 500}});
+                                    }else {
+
+                                    }
+                                });
                             }
                         })
                     }

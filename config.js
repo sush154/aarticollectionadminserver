@@ -8,7 +8,7 @@ var config = {
 		},
 		mongooseConnection : null,
 		client : {
-			connectionUrl : ['http://localhost:3000', 'http://localhost:8100']
+			connectionUrl : ['http://localhost:3000', 'http://localhost:8100', 'https://aarticollectionadminui.herokuapp.com/', 'http://localhost:4200']
 		}
 }
 

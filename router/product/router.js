@@ -109,6 +109,7 @@ ProductRouter.post('/addProduct', function(req, res){
     newProduct.description = req.body.description;
     newProduct.discount = 0;
     newProduct.ratings = 0;
+    newProduct.additionDate = new Date();
 
     /*for(let i=0; i< req.body.highlights.length; i++){
         newProduct.highlights.push(req.body.highlights[i]);

@@ -471,12 +471,11 @@ CustomerRouter.get('/customerNameFilter/:filterType/:filterValue', function(req,
 
     if(req.params.filterType === 'customerName'){
 
-        CustomerModel.find({'customerName' : new RegExp(req.params.filterValue, 'i')}, function(err, customer){
+        CustomerModel.find({'customerName' : new RegExp(req.params.filterValue, 'i'), 'role' : 'customer'}, function(err, customer){
             if(err){
                 console.log(err);
                 return res.json({data:{status : 500}});
             }else {
-                console.log(customer.length);
                 return res.json({data: {status : 200, customer}});
             }
         });
