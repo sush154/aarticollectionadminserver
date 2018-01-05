@@ -96,7 +96,23 @@ OrderRouter.post('/addOrder', function(req, res){
                     }
                 })
 
+                // Mark the order rate for the product in Product Model
 
+                ProductModel.findOne({productId : req.body.productIds[i].productId}, function(e, p){
+                    if(e){
+                        console.log(e);
+                        return res.json({data:{status : 500}});
+                    }else {
+                        ProductModel.update({_id : p._id}, {$inc : {'orderRate' : req.body.productIds[i].quantity}}, function(ee, pp){
+                            if(ee){
+                                console.log(ee);
+                                return res.json({data:{status : 500}});
+                            }else {
+
+                            }
+                        })
+                    }
+                });
             }
         }
     });

@@ -49,7 +49,7 @@ var upload = multer({ //multer settings
 *   This method retrieves all products
 */
 ProductRouter.get('/getAllProducts', function(req, res){
-    ProductModel.find({}).populate('category').select('productId productName category price quantity images').exec(function(err, product){
+    ProductModel.find({}).populate('category').select('productId productName category price quantity images').sort('productId').exec(function(err, product){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
@@ -297,7 +297,7 @@ ProductRouter.post('/addDiscountSelectedProduct', function(req, res){
 /*
 *   This method add image urls for the product
 */
-ProductRouter.post('/addImage/:productId', function(req, res){
+ProductRouter.post('/addImage', function(req, res){
     /*ProductModel.update({_idg : req.body._id}, {'$push' : {'images' : req.body.imaeUrl}}, function(err, product){
         if(err){
             console.log(err);
@@ -307,40 +307,40 @@ ProductRouter.post('/addImage/:productId', function(req, res){
         }
     });*/
     //console.log(req.params.productId);
+    /*console.log(req.file);
     upload(req,res,function(err){
-        //console.log(req.file);
+
         if(err){
              return res.json({error_code:1,err_desc:err});
 
         }else {
-            var newImage = new ImageModel;
 
-            newImage.img.data = fs.readFileSync(req.file.path);
-            newImage.img.contentType = 'base64';
-            newImage.projectId = req.params.productId;
+            let imagePath = req.file.destination + req.file.filename;
 
-            newImage.save(function(e, image){
-                if(e){
-                    console.log(e);
+            ProductModel.update({_id : req.params.productId}, {'$push' : {'images' : imagePath}}, function(err, product){
+                if(err){
+                    console.log(err);
                     return res.json({data:{status : 500}});
                 }else {
-                    fs.unlinkSync(req.file.path);
-                    return res.json({data:{status : 200}});
-
-                    /*ProductModel.update({_id : req.params.productId}, {'$push' : {'images' : image._id}}, function(err, product){
-                        if(err){
-                            console.log(err);
-                            return res.json({data:{status : 500}});
-                        }else {
-                            return res.json({data: {status: 200, product : req.params.productId}});
-                            //return res.json({error_code:0,err_desc:null});
-                        }
-                    });*/
+                    return res.json({data: {status: 200, product : req.params.productId}});
+                    //return res.json({error_code:0,err_desc:null});
                 }
             });
+
         }
 
+    });*/
+
+    ProductModel.update({_id : req.body.productID}, {'$push' : {'images' : req.body.imagePath}}, function(err, product){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data: {status: 200, product : req.params.productId}});
+            //return res.json({error_code:0,err_desc:null});
+        }
     });
+
 });
 
 /*
@@ -348,7 +348,7 @@ ProductRouter.post('/addImage/:productId', function(req, res){
 */
 ProductRouter.get('/getImagesList/:productId', function(req, res){
 //projectId : req.params.productId
-    ImageModel.find({projectId : req.params.productId}, function(err, image){
+    /*ImageModel.find({projectId : req.params.productId}, function(err, image){
         if(err){
             console.log(err);
             return res.json({data:{status : 500}});
@@ -358,7 +358,16 @@ ProductRouter.get('/getImagesList/:productId', function(req, res){
             res.send(image);
             //return res.json({data: {status: 200, product}});
         }
-    })
+    })*/
+
+    ProductModel.find({_id : req.params.productId}).select('images').exec(function(err, image){
+        if(err){
+            console.log(err);
+            return res.json({data:{status : 500}});
+        }else {
+            return res.json({data: {status: 200, image}});
+        }
+    });
 });
 
 /*
@@ -394,6 +403,24 @@ ProductRouter.get('/productNameFilter/:productName', function(req, res){
         }else {
             return res.json({data: {status: 200, product}});
 
+        }
+    });
+});
+
+
+ProductRouter.post('/getImg', function(req, res){
+    res.set('Content-Type', 'image/jpg');
+    //res.send(fs.readFileSync('./uploads/file-1514958738002.jpg'));
+    let imageDir = req.body.imagePath;
+    fs.readFile(imageDir, function(err, content){
+        if (err) {
+            res.writeHead(400, {'Content-type':'text/html'})
+            console.log(err);
+            res.end("No such image");
+        } else {
+            //specify the content type in the response will be an image
+            res.writeHead(200,{'Content-type':'image/*'});
+            res.end(content);
         }
     });
 });
